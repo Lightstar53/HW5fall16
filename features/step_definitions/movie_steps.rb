@@ -4,7 +4,6 @@ Given /^I am on the RottenPotatoes home page$/ do
   visit movies_path
  end
 
-
  When /^I have added a movie with title "(.*?)" and rating "(.*?)"$/ do |title, rating|
   visit new_movie_path
   fill_in 'Title', :with => title
@@ -45,30 +44,75 @@ Given /^I am on the RottenPotatoes home page$/ do
 
 # Add a declarative step here for populating the DB with movies.
 
+# PART 1
 Given /the following movies have been added to RottenPotatoes:/ do |movies_table|
-  pending  # Remove this statement when you finish implementing the test step
   movies_table.hashes.each do |movie|
-    # Each returned movie will be a hash representing one row of the movies_table
-    # The keys will be the table headers and the values will be the row contents.
-    # Entries can be directly to the database with ActiveRecord methods
-    # Add the necessary Active Record call(s) to populate the database.
+    Movie.create!(movie)
+   
   end
 end
 
+# PART 2
 When /^I have opted to see movies rated: "(.*?)"$/ do |arg1|
   # HINT: use String#split to split up the rating_list, then
   # iterate over the ratings and check/uncheck the ratings
   # using the appropriate Capybara command(s)
-  pending  #remove this statement after implementing the test step
+  
+  if arg1.present?
+    arg1 =arg1.gsub(/[,]/,"")
+  end
+  ratings = arg1.split
+    ratings.each do |r|
+     check("ratings_#{r}")
+    end
 end
-
 Then /^I should see only movies rated: "(.*?)"$/ do |arg1|
-  pending  #remove this statement after implementing the test step
+    if arg1.present?
+      arg1 =arg1.gsub(/[,]/,"")
+    end
+    ratings = arg1.split
+    ratings.each do |r|
+        if r == "G"
+            page.body.should match(/<td>G<\/td>/)
+        end
+        if r == "PG"
+          page.body.should match(/<td>PG<\/td>/)
+        end
+        if r == "PG-13"
+            page.body.should match(/<td>PG-13<\/td>/)
+        end
+        if r == "NC-17"
+            page.body.should match(/<td>NC-17<\/td>/)
+        end
+        if r == "R"
+            page.body.should match(/<td>R<\/td>/)
+        end
+    end
 end
 
 Then /^I should see all of the movies$/ do
-  pending  #remove this statement after implementing the test step
+    movies = Movie.all
+    count = Movie.count()
+    rows = page.all('#movies tr').size - 1
+    rows.should == count
 end
 
+# PART 3
+Then /I should see "(.*)" before "(.*)"/ do |movie1, movie2|
+  m1 = (page.body =~ /#{movie1}/)
+  m2 = (page.body =~ /#{movie2}/)
+  m1.should < m2
+end
 
+When /I sort the results by (.*)/ do |sort_order|
+  sort_id = sort_order.gsub(/\s/, '_')
+  click_link "#{sort_id}_header"
+end
 
+When /I follow "Movie Title"/ do
+  click_link "title_header"
+end
+
+When /I follow "Release Date"/ do
+  click_link "release_date_header"
+end
